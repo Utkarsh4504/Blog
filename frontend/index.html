@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Assistant & Scanner</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>AI Assistant & Scanner</h1>
+        <div class="form-group">
+            <label>Mode:</label>
+            <div class="radio-group">
+                <input type="radio" id="modeQuery" name="mode" value="query" checked>
+                <label for="modeQuery">AI Query</label>
+                <input type="radio" id="modeScan" name="mode" value="scan">
+                <label for="modeScan">URL Scan</label>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="textInput">Your Input:</label>
+            <input type="text" id="textInput" placeholder="Enter your query...">
+        </div>
+
+        <div class="form-group" id="ownership-group" style="display: none;">
+            <input type="checkbox" id="ownership-checkbox">
+            <label for="ownership-checkbox">I confirm I have permission to scan this domain.</label>
+        </div>
+
+        <button id="submitBtn">Submit</button>
+
+        <div id="results-container">
+            <h2>Results</h2>
+            <pre id="results-output">Results will be displayed here.</pre>
+        </div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
