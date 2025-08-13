@@ -1,3 +1,4 @@
+import re
 import subprocess
 from urllib.parse import urlparse
 from flask import Flask, request, jsonify, send_from_directory
@@ -49,6 +50,10 @@ def handle_scan():
         hostname = urlparse(url).hostname
         if not hostname:
             return jsonify({"error": "Invalid URL provided."}), 400
+
+        # Validate hostname to prevent argument injection.
+        if not re.match(r"^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\-]*[A-Za-z0-9])$", hostname):
+            return jsonify({"error": "Invalid hostname provided."}), 400
 
         command = ["nmap", "-F", hostname]
         result = subprocess.run(

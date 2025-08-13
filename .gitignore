@@ -1,0 +1,11 @@
+# Byte-compiled / optimized files
+__pycache__/
+*.pyc
+
+# Test artifacts
+.pytest_cache/
+.coverage
+
+# Environment
+.venv/
+venv/
