@@ -2,8 +2,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const modeQueryRadio = document.getElementById('modeQuery');
     const modeScanRadio = document.getElementById('modeScan');
     const textInput = document.getElementById('textInput');
-    const ownershipGroup = document.getElementById('ownership-group');
-    const ownershipCheckbox = document.getElementById('ownership-checkbox');
     const submitBtn = document.getElementById('submitBtn');
     const resultsOutput = document.getElementById('results-output');
 
@@ -11,11 +9,9 @@ document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('input[name="mode"]').forEach(radio => {
         radio.addEventListener('change', (event) => {
             if (event.target.value === 'scan') {
-                ownershipGroup.style.display = 'block';
-                textInput.placeholder = 'Enter URL to scan...';
+                textInput.placeholder = 'Enter a URL to scan...';
             } else {
-                ownershipGroup.style.display = 'none';
-                textInput.placeholder = 'Enter your query...';
+                textInput.placeholder = 'Enter your coding question...';
             }
         });
     });
@@ -40,8 +36,7 @@ document.addEventListener('DOMContentLoaded', () => {
             body = { query: input };
         } else {
             body = {
-                url: input,
-                confirm_ownership: ownershipCheckbox.checked
+                url: input
             };
         }
 

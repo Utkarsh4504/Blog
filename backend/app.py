@@ -38,12 +38,8 @@ def handle_scan():
     """Handles vulnerability scan requests and provides a mock AI summary."""
     data = request.json
     url = data.get('url')
-    confirm_ownership = data.get('confirm_ownership', False)
-
     if not url:
         return jsonify({"error": "URL is required."}), 400
-    if not confirm_ownership:
-        return jsonify({"error": "You must confirm ownership of the domain to scan."}), 403
 
     try:
         hostname = urlparse(url).hostname
