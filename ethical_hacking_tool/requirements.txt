@@ -1,0 +1,4 @@
+python-nmap
+scikit-learn
+scapy
+requests
