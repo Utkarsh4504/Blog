@@ -4,6 +4,7 @@ import subprocess
 import requests
 from scapy.all import sniff
 from sklearn.externals import joblib
+from ollama_scanner import analyze_service_with_ollama # Import the new function
 
 # Set up logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -148,6 +149,16 @@ class AIEthicalHacker:
             if packet.haslayer("IP") and packet["IP"].flags == 4:
                 logging.warning(f"Suspicious packet found: {packet.summary()}")
 
+    def scan_service_with_ollama(self, service_info):
+        """
+        Analyzes a single service using the connected Ollama LLM.
+
+        :param service_info: A string describing the service (e.g., 'apache httpd 2.4.29').
+        :return: The assessment from Ollama.
+        """
+        logging.info(f"Scanning '{service_info}' with Ollama...")
+        return analyze_service_with_ollama(service_info)
+
 if __name__ == '__main__':
     # Example usage
     target_ip = "127.0.0.1"  # Replace with your target
@@ -186,3 +197,11 @@ if __name__ == '__main__':
 
     # Example of network traffic analysis
     # hacker.analyze_network_traffic()
+
+    # Example of using Ollama for analysis
+    # Note: Requires Ollama to be running locally with a model like 'llama2'.
+    # print("\n--- Ollama Analysis ---")
+    # service_to_check = "vsftpd 2.3.4"
+    # ollama_assessment = hacker.scan_service_with_ollama(service_to_check)
+    # print(f"Ollama assessment for '{service_to_check}':")
+    # print(ollama_assessment)
