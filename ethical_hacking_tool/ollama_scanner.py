@@ -63,3 +63,62 @@ if __name__ == '__main__':
         assessment = analyze_service_with_ollama(service)
         print(f"\n- Service: {service}")
         print(f"  Ollama's Assessment: {assessment}")
+
+    # --- Example of generating payloads ---
+    print("\n--- AI Payload Generation Example ---")
+    context = "a numeric ID parameter in a URL that might be vulnerable to SQL injection"
+    generated_payloads = generate_payloads_with_ollama(context)
+    print(f"\nPayloads generated for context: '{context}'")
+    for payload in generated_payloads:
+        print(f"- {payload}")
+
+def generate_payloads_with_ollama(context, num_payloads=10, model="llama2"):
+    """
+    Generates a list of fuzzing payloads using an Ollama LLM.
+
+    :param context: A string describing the context for the payloads (e.g., "SQL injection").
+    :param num_payloads: The number of payloads to generate.
+    :param model: The name of the Ollama model to use.
+    :return: A list of payload strings.
+    """
+    print(f"Generating {num_payloads} payloads for context: '{context}'...")
+
+    prompt = f"""
+    You are a cybersecurity expert specializing in web application penetration testing.
+    Based on the following context, generate a list of {num_payloads} creative and effective fuzzing payloads.
+    The payloads should be designed to test for common web vulnerabilities.
+
+    Context: "{context}"
+
+    IMPORTANT: Return ONLY a Python-parseable list of strings and nothing else. Do not include any explanation or surrounding text.
+    Example output: ["' OR 1=1 --", "<script>alert('XSS')</script>", " UNION SELECT null,null--"]
+    """
+
+    payload = {
+        "model": model,
+        "prompt": prompt,
+        "stream": False
+    }
+
+    try:
+        response = requests.post(OLLAMA_API_URL, json=payload)
+        response.raise_for_status()
+        response_text = response.json().get("response", "[]").strip()
+
+        # The LLM might sometimes include markdown backticks. We remove them.
+        if response_text.startswith("```python"):
+            response_text = response_text.replace("```python", "").replace("```", "")
+
+        # Safely evaluate the string as a Python literal (list)
+        payloads = json.loads(response_text)
+        if isinstance(payloads, list):
+            return payloads
+        else:
+            return ["Error: LLM did not return a valid list."]
+
+    except requests.exceptions.ConnectionError:
+        return ["Error: Could not connect to the Ollama server."]
+    except json.JSONDecodeError:
+        return [f"Error: Could not decode the LLM's response: {response_text}"]
+    except Exception as e:
+        return [f"An error occurred: {e}"]

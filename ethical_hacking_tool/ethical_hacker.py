@@ -4,7 +4,9 @@ import subprocess
 import requests
 from scapy.all import sniff
 from sklearn.externals import joblib
-from ollama_scanner import analyze_service_with_ollama # Import the new function
+from ollama_scanner import analyze_service_with_ollama, generate_payloads_with_ollama
+from bs4 import BeautifulSoup
+from urllib.parse import urljoin, urlparse
 
 # Set up logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -23,6 +25,8 @@ class AIEthicalHacker:
         self.target = target
         self.nmap = nmap.PortScanner()
         self.ai_model = None
+        self.session = requests.Session()
+        self.session.headers.update({'User-Agent': 'AIEthicalHacker/1.0'})
 
     def run_nmap_scan(self, arguments='-sV'):
         """
@@ -43,25 +47,18 @@ class AIEthicalHacker:
     def run_burp_suite(self):
         """
         Placeholder for running Burp Suite.
-        Integration with Burp Suite is complex and typically requires using its API
-        or a command-line interface if available. This is a placeholder for that functionality.
         """
         logging.info("Burp Suite integration is not implemented in this version.")
-        print("Placeholder: Run Burp Suite against the target.")
 
     def run_metasploit(self):
         """
         Placeholder for running Metasploit.
-        This would typically involve using msfconsole or Metasploit's RPC API.
         """
         logging.info("Metasploit integration is not implemented in this version.")
-        print("Placeholder: Run Metasploit against the target.")
 
     def load_ai_model(self, model_path='vulnerability_scanner.pkl'):
         """
         Loads a pre-trained AI model for vulnerability scanning.
-
-        :param model_path: The path to the pre-trained model file.
         """
         logging.info(f"Loading AI model from {model_path}")
         try:
@@ -74,54 +71,39 @@ class AIEthicalHacker:
     def scan_with_ai(self, scan_results):
         """
         Uses the loaded AI model to predict vulnerabilities based on scan results.
-
-        :param scan_results: The results from a scan (e.g., Nmap results).
-        :return: A list of potential vulnerabilities.
         """
         if self.ai_model is None:
             logging.warning("AI model is not loaded. Cannot perform AI-powered scan.")
             return []
-
         logging.info("Scanning with AI model...")
-        # This is a placeholder for the feature extraction and prediction logic.
-        # You would need to process the scan_results into a format the model expects.
-        # For example, you might extract features like open ports, services, versions, etc.
-        # features = self.extract_features(scan_results)
-        # predictions = self.ai_model.predict(features)
-        # return predictions
         print("Placeholder: Scan with AI model.")
         return ["Potential SQL Injection", "Potential Cross-Site Scripting"]
 
     def fuzz_web_application(self, url, payloads):
         """
         Performs fuzzing on a web application by sending a list of payloads.
-
-        :param url: The URL to fuzz.
-        :param payloads: A list of payloads to send.
         """
         logging.info(f"Fuzzing {url} with {len(payloads)} payloads.")
         for payload in payloads:
             try:
-                response = requests.get(f"{url}?param={payload}")
-                if "error" in response.text or response.status_code != 200:
-                    logging.warning(f"Potential vulnerability found with payload: {payload}")
+                # This is a simplified fuzzer. A real one would substitute payloads in different places.
+                fuzz_url = f"{url}?q={payload}"
+                response = self.session.get(fuzz_url)
+                # A simple check for potential issues. Real analysis would be more complex.
+                if response.status_code == 500 or "error" in response.text.lower() or "exception" in response.text.lower():
+                    logging.warning(f"Potential vulnerability found at {fuzz_url} with payload: {payload}")
             except requests.exceptions.RequestException as e:
                 logging.error(f"Request failed for payload {payload}: {e}")
 
     def brute_force_login(self, url, usernames, passwords):
         """
         Performs a simple brute-force attack on a login page.
-        WARNING: This should only be used on systems you have explicit permission to test.
-
-        :param url: The URL of the login page.
-        :param usernames: A list of usernames to try.
-        :param passwords: A list of passwords to try.
         """
         logging.warning("Starting brute-force attack. Use this responsibly.")
         for username in usernames:
             for password in passwords:
                 try:
-                    response = requests.post(url, data={'username': username, 'password': password})
+                    response = self.session.post(url, data={'username': username, 'password': password})
                     if "welcome" in response.text or "dashboard" in response.text:
                         logging.info(f"Successful login with {username}:{password}")
                         return username, password
@@ -133,75 +115,107 @@ class AIEthicalHacker:
     def analyze_network_traffic(self, packet_count=100):
         """
         Captures and analyzes network traffic to detect suspicious patterns.
-
-        :param packet_count: The number of packets to capture.
         """
         logging.info(f"Capturing {packet_count} packets for analysis...")
         packets = sniff(count=packet_count)
         logging.info(f"Captured {len(packets)} packets.")
-
-        # Placeholder for AI-powered analysis
-        # You would extract features from the packets and use a trained model
-        # to classify them as benign or malicious.
-        # For example, you might look at packet sizes, protocols, ports, etc.
         for packet in packets:
-            # Simple example: check for packets with the "evil" bit set in the IP header
             if packet.haslayer("IP") and packet["IP"].flags == 4:
                 logging.warning(f"Suspicious packet found: {packet.summary()}")
 
     def scan_service_with_ollama(self, service_info):
         """
         Analyzes a single service using the connected Ollama LLM.
-
-        :param service_info: A string describing the service (e.g., 'apache httpd 2.4.29').
-        :return: The assessment from Ollama.
         """
         logging.info(f"Scanning '{service_info}' with Ollama...")
         return analyze_service_with_ollama(service_info)
 
+    def crawl_website(self, base_url):
+        """
+        Crawls a website to find all unique internal links.
+
+        :param base_url: The URL to start crawling from.
+        :return: A set of unique URLs found on the site.
+        """
+        logging.info(f"Crawling website: {base_url}")
+        urls_to_visit = [base_url]
+        visited_urls = set()
+        base_netloc = urlparse(base_url).netloc
+
+        while urls_to_visit:
+            current_url = urls_to_visit.pop(0)
+            if current_url in visited_urls:
+                continue
+
+            try:
+                response = self.session.get(current_url, timeout=5)
+                visited_urls.add(current_url)
+                logging.info(f"Visiting: {current_url}")
+
+                soup = BeautifulSoup(response.content, 'html.parser')
+                for link in soup.find_all('a', href=True):
+                    absolute_link = urljoin(base_url, link['href'])
+                    # Stay on the same domain
+                    if urlparse(absolute_link).netloc == base_netloc:
+                        if absolute_link not in visited_urls and absolute_link not in urls_to_visit:
+                            urls_to_visit.append(absolute_link)
+
+            except requests.exceptions.RequestException as e:
+                logging.error(f"Could not get URL {current_url}: {e}")
+
+        logging.info(f"Crawling finished. Found {len(visited_urls)} unique URLs.")
+        return visited_urls
+
+    def scan_website_with_ai_payloads(self, base_url):
+        """
+        Orchestrates a full website scan: crawls, generates AI payloads, and fuzzes.
+
+        :param base_url: The base URL of the website to scan.
+        """
+        logging.info(f"Starting full AI-powered scan for {base_url}")
+
+        # Step 1: Crawl the website to find targets
+        target_urls = self.crawl_website(base_url)
+
+        # Step 2: For each URL, generate payloads and fuzz
+        for url in target_urls:
+            logging.info(f"--- Scanning URL: {url} ---")
+
+            # Step 2a: Create a context for the AI
+            # A more advanced version could analyze the URL/page content for better context
+            context = f"a generic web page with potential URL parameter vulnerabilities. The URL is {url}"
+
+            # Step 2b: Generate payloads with AI
+            ai_payloads = generate_payloads_with_ollama(context, num_payloads=5)
+            if not ai_payloads or "Error" in ai_payloads[0]:
+                logging.error(f"Could not generate payloads for {url}: {ai_payloads[0] if ai_payloads else 'Empty response'}")
+                continue
+
+            # Step 2c: Fuzz the URL with the generated payloads
+            self.fuzz_web_application(url, ai_payloads)
+
+
 if __name__ == '__main__':
-    # Example usage
-    target_ip = "127.0.0.1"  # Replace with your target
-    hacker = AIEthicalHacker(target_ip)
+    # This tool can be used to scan an IP address or a website.
+    # Choose your target type. For web scanning, a domain is better.
+    target = "127.0.0.1"
+    hacker = AIEthicalHacker(target)
 
-    # Run Nmap scan
-    nmap_results = hacker.run_nmap_scan()
-    if nmap_results:
-        print("Nmap Scan Results:")
-        print(nmap_results)
+    # --- Example of Nmap Scan ---
+    # print("--- Nmap Scan ---")
+    # nmap_results = hacker.run_nmap_scan()
+    # if nmap_results:
+    #     print(nmap_results)
 
-    # Load AI model and scan
-    hacker.load_ai_model()
-    if hacker.ai_model:
-        vulnerabilities = hacker.scan_with_ai(nmap_results)
-        print("\nAI-Predicted Vulnerabilities:")
-        for vulnerability in vulnerabilities:
-            print(f"- {vulnerability}")
-
-    # Run placeholder for Burp Suite and Metasploit
-    hacker.run_burp_suite()
-    hacker.run_metasploit()
-
-    # Example of fuzzing
-    # Note: Replace with a URL from a test environment you are authorized to test.
-    # fuzz_url = "http://testphp.vulnweb.com/listproducts.php"
-    # payloads = ["'", "\"", "<script>alert(1)</script>", "OR 1=1"]
-    # hacker.fuzz_web_application(fuzz_url, payloads)
-
-    # Example of brute-forcing
-    # Note: Replace with a URL from a test environment you are authorized to test.
-    # login_url = "http://testphp.vulnweb.com/login.php"
-    # usernames = ["admin", "test"]
-    # passwords = ["password", "12345"]
-    # hacker.brute_force_login(login_url, usernames, passwords)
-
-    # Example of network traffic analysis
-    # hacker.analyze_network_traffic()
-
-    # Example of using Ollama for analysis
-    # Note: Requires Ollama to be running locally with a model like 'llama2'.
+    # --- Example of using Ollama for service analysis ---
     # print("\n--- Ollama Analysis ---")
     # service_to_check = "vsftpd 2.3.4"
     # ollama_assessment = hacker.scan_service_with_ollama(service_to_check)
-    # print(f"Ollama assessment for '{service_to_check}':")
-    # print(ollama_assessment)
+    # print(f"Ollama assessment for '{service_to_check}': {ollama_assessment}")
+
+    # --- NEW: Example of Full AI-Powered Website Scan ---
+    # Note: Replace with a URL from a test environment you are authorized to test.
+    # Make sure Ollama is running!
+    print("\n--- Full AI-Powered Website Scan ---")
+    web_target = "http://testphp.vulnweb.com" # A known-vulnerable test site
+    hacker.scan_website_with_ai_payloads(web_target)
